@@ -4,7 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
   fetch("hamburger.json")
     .then(res => res.json())
     .then(data => {
-      allItems = data.filter(e => (e["메뉴명 "] ?? "").toString().trim() !== "");
+      allItems = data.filter(item => (item["메뉴명 "] ?? "").trim() !== "");
       renderList();
     });
 
@@ -19,12 +19,14 @@ function renderList() {
 
   let filtered = [...allItems];
 
+  // ✅ 필터 적용
   if (filterValue !== "전체") {
     filtered = filtered.filter(
       item => item["메뉴종류(불고기,새우,대표메뉴)"] === filterValue
     );
   }
 
+  // ✅ 정렬 적용
   switch (sortValue) {
     case "가격높은순":
       filtered.sort((a, b) => (b["가격"] ?? 0) - (a["가격"] ?? 0));
@@ -32,18 +34,25 @@ function renderList() {
     case "가격낮은순":
       filtered.sort((a, b) => (a["가격"] ?? 0) - (b["가격"] ?? 0));
       break;
-    case "칼로리높은순":
-      filtered.sort((a, b) => (b["칼로리"] ?? 0) - (a["칼로리"] ?? 0));
+    case "100g가격높은순":
+      filtered.sort((a, b) => ratioPrice(b) - ratioPrice(a));
       break;
-    case "칼로리낮은순":
-      filtered.sort((a, b) => (a["칼로리"] ?? 0) - (b["칼로리"] ?? 0));
+    case "100g가격낮은순":
+      filtered.sort((a, b) => ratioPrice(a) - ratioPrice(b));
       break;
-    case "100g당가격높은순":
-      filtered.sort((a, b) => pricePer100g(b) - pricePer100g(a));
+    case "100gkcal높은순":
+      filtered.sort((a, b) => ratioKcal(b) - ratioKcal(a));
       break;
-    case "100g당가격낮은순":
-      filtered.sort((a, b) => pricePer100g(a) - pricePer100g(b));
+    case "100gkcal낮은순":
+      filtered.sort((a, b) => ratioKcal(a) - ratioKcal(b));
       break;
+    case "기본":
+    default:
+      filtered.sort((a, b) => {
+        const nameA = a["브랜드명 "]?.trim() ?? "";
+        const nameB = b["브랜드명 "]?.trim() ?? "";
+        return nameA.localeCompare(nameB, "ko");
+      });
   }
 
   container.innerHTML = "";
@@ -51,42 +60,56 @@ function renderList() {
   filtered.forEach(item => {
     const brand = item["브랜드명"] ?? "";
     const name = item["메뉴명 "]?.trim() ?? "";
-    const type = item["메뉴종류(불고기,새우,대표메뉴)"] ?? "";
     const price = item["가격"] ?? 0;
     const weight = item["무게"] ?? 0;
     const calorie = item["칼로리"] ?? 0;
-    const per100g = pricePer100g(item);
 
-    const col = document.createElement("div");
-    col.className = "col-md-6";
-    col.innerHTML = `
-    <div class="card h-100 border-0 shadow-sm rounded-4" style="background-color: #fffdf5;">
-      <div class="card-body d-flex flex-column justify-content-between" style="padding: 20px;">
-        <div>
-          <div class="fw-bold fs-5 mb-2">${brand} - ${name}</div>
-          <div class="text-muted mb-1" style="font-size: 15px;">
-            🍔 종류: ${type}
-          </div>
-          <div class="mb-2" style="font-size: 14px;">
-            💰 ${price}원 /  
-            ⚖️ ${weight}g /
-            🔥 ${calorie}kcal
-          </div>
-        </div>
-        <div class="text-end text-secondary" style="font-size: 13px;">
-          100g당 가격: <span class="fw-semibold">${per100g}원</span>
+    const card = document.createElement("div");
+    card.className = "card";
+
+card.innerHTML = `
+  <div class="card-body px-4 py-3">
+    <div class="d-flex justify-content-between align-items-center" style="min-height: 40px;">
+      <div class="d-flex align-items-center" style="flex: 1;">
+        <div class="fw-semibold" style="font-size: 1.2rem;">${brand} - ${name}</div>
+      </div>
+      <div class="text-end d-flex flex-column justify-content-center" style="min-width: 140px;">
+        <div style="font-size: 1.2rem; color: #66bb6a;">${price.toLocaleString()}원  </div>
+        <div class="text-muted" style="font-size: 0.9rem;">${weight}g ·  (100g당 ${per100gPrice(price, weight)}원) </div>
+        <div class="text-muted" style="font-size: 0.75rem;">
+            ${calorie}kcal,  (100g당 ${per100gKcal(calorie, weight)}kcal)
         </div>
       </div>
     </div>
-  `;
-  
+  </div>
+`;
 
-    container.appendChild(col);
+    container.appendChild(card);
   });
 }
 
-function pricePer100g(item) {
+// 100g당 가격 계산
+function ratioPrice(item) {
   const price = item["가격"] ?? 0;
   const weight = item["무게"] ?? 0;
-  return weight > 0 ? Math.round((price / weight) * 100) : 999999;
+  return weight > 0 ? price / weight * 100 : Infinity;
 }
+
+// 100g당 칼로리 계산
+function ratioKcal(item) {
+  const calorie = item["칼로리"] ?? 0;
+  const weight = item["무게"] ?? 0;
+  return weight > 0 ? calorie / weight * 100 : -Infinity;
+}
+
+
+function per100gPrice(price, weight) {
+  if (!price || !weight || weight === 0) return '-';
+  return Math.round((price / weight) * 100).toLocaleString();
+}
+
+function per100gKcal(kcal, weight) {
+  if (!kcal || !weight || weight === 0) return '-';
+  return Math.round((kcal / weight) * 100);
+}
+
