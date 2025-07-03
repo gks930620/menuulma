@@ -46,8 +46,8 @@ function renderList() {
       break;
     default:
       filtered.sort((a, b) => {
-        const nameA = a["브랜드명 "]?.trim() ?? "";
-        const nameB = b["브랜드명 "]?.trim() ?? "";
+        const nameA = a["브랜드명"]?.trim() ?? "";
+        const nameB = b["브랜드명"]?.trim() ?? "";
         return nameA.localeCompare(nameB, "ko");
       });
   }
@@ -69,7 +69,7 @@ function renderList() {
       <div class="card-body px-4 py-4">
         <div class="d-flex justify-content-between align-items-center" style="min-height: 20px;">
           <div class="d-flex align-items-center" style="flex: 1;">
-            <img src="${brandImage}" class="burger-img" alt="브랜드 이미지">
+            <img src="${brandImage}" class="brand-img" alt="브랜드 이미지">
             <div class="fw-semibold" style="font-size: 1.2rem;">${brand} - ${name}</div>
           </div>
           <div class="text-end d-flex flex-column justify-content-center" style="min-width: 160px;">
