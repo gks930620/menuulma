@@ -7,6 +7,7 @@ document.addEventListener("DOMContentLoaded", () => {
       allItems = data.filter(item => (item["메뉴명"] ?? "").trim() !== "");
       renderList();
     });
+    
 
   document.getElementById("filterSelect").addEventListener("change", renderList);
   document.getElementById("sortSelect").addEventListener("change", renderList);
